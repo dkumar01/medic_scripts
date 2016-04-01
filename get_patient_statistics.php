@@ -17,57 +17,70 @@ $db = new DB_CONNECT();
 //Check for post data
 if (isset($_GET["patient_id"])) 
 {
-    $pid = $_GET['patient_id'];
+    $patient_id = $_GET['patient_id'];
  
-    //Get a patient from patients table
-    $result = mysql_query("SELECT * FROM patient_statistics WHERE patient_id = $patient_id");
- 
-    if (!empty($result))
+	// get all statistics from patient_statistics table
+	$query = "SELECT * FROM patient_statistics WHERE patient_id = $patient_id";
+	
+	try 
 	{
-        //Check for empty result
-        if (mysql_num_rows($result) > 0) {
- 
-            $result = mysql_fetch_array($result);
- 
-            $patient_statistics = array();
-            $patient_statistics["statistics_id"] = $result["statistics_id"];
-            $patient_statistics["patient_id"] = $result["patient_id"];
-			$patient_statistics["date_of_submission"] = $result["date_of_submission"];
-            $patient_statistics["glucose_level"] = $result["glucose_level"];
-            $patient_statistics["weight"] = $result["weight"];
-            $patient_statistics["cholesterol"] = $result["cholesterol"];
-            $patient_statistics["comments"] = $result["comments"];
-			
-			//Success
-            $response["success"] = 1;
- 
-            //User node
-            $response["patient_statistics"] = array();
- 
-            array_push($response["patient_statistics"], $patient_statistics);
- 
-            //Echoing JSON response
-            echo json_encode($response);
-        } 
-		else 
+		$con = mysqli_connect("localhost","root","","medic");
+		$result = mysqli_query($con, $query);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//$patient_id = $row["patient_id"];
+		mysqli_close($con);
+	}
+	catch (mysqli_sql_exception $ex) 
+	{
+		//die("Failed to run query: " . $ex->getMessage());
+		
+		$response["success"] = 0;
+		$response["message"] = "Database Error. Please Try Again!";
+		
+		echo json_encode($response);
+		//die(json_encode($response));
+		
+	}
+	
+	
+	// check for empty result
+	if (mysqli_num_rows($result) > 0) 
+	{
+		// looping through all results
+		// patients node
+		$response["patient_statistics"] = array();
+		
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) 
 		{
-            //No statistics found
-            $response["success"] = 0;
-            $response["message"] = "No statistics found";
- 
-            //Echo no users JSON
-            echo json_encode($response);
-        }
-    } 
-	else
-	{
-        //No statistics found
-        $response["success"] = 0;
-        $response["message"] = "No statistics found";
- 
-        //Echo no users JSON
-        echo json_encode($response);
-    }
+			//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			//Temp user array
+			$statistics = array();
+            $statistics["statistics_id"] = $row["statistics_id"];
+            $statistics["patient_id"] = $row["patient_id"];
+			$statistics["date_of_submission"] = $row["date_of_submission"];
+            $statistics["glucose_level"] = $row["glucose_level"];
+            $statistics["cholesterol"] = $row["cholesterol"];
+            $statistics["weight"] = $row["weight"];
+            $statistics["comments"] = $row["comments"];
+			
+			// push single patient into final response array
+			array_push($response["patient_statistics"], $statistics);
+		}
+		// success
+		$response["success"] = 1;
+		
+		// echoing JSON response
+		echo json_encode($response);
+	} 
+	else {
+		// no patient found
+		$response["success"] = 0;
+		$response["message"] = "No statistics found";
+		
+		// echo no users JSON
+		echo json_encode($response);
+	}
+		
 } 
 else 
 {

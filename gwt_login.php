@@ -1,77 +1,77 @@
 <?php
 	
 	/*
-		* Following code will create a new patient_statistics row
+		* Following code will list all the patients
 	*/
 	
 	// array for JSON response
 	$response = array();
 	
-	// check for required fields
-	//if (isset($_POST['patient_id']) && isset($_POST['date_of_submission']) && isset($_POST['glucose_level']) && isset($_POST['cholesterol']) && isset($_POST['weight']) && isset($_POST['comments'])) 
+	// include db connect class
+	require_once __DIR__ . '\db_connect.php';
+	
+	// connecting to db
+	$db = new DB_CONNECT();
+	
+	// get all patient from patient table
+	$query = "SELECT * FROM patient_statistics WHERE patient_id = 1";
+	
+	try 
 	{
-		
-		/*$patient_id = $_POST['patient_id'];
-		$date_of_submission = $_POST['date_of_submission'];
-		$glucose_level = $_POST['glucose_level'];
-		$cholesterol = $_POST['cholesterol'];
-		$weight = $_POST['weight'];
-		$comments = $_POST['comments'];*/
-		
-		
-		//Include db connect class
-		require_once __DIR__ . '\db_connect.php';
-		
-		//Connecting to db
-		$db = new DB_CONNECT();
-		
-		//Inserting a new row
-		$query = "INSERT INTO patient_statistics(patient_id, date_of_submission, glucose_level, cholesterol, weight, comments) VALUES(1, '2016/11/02 12:8', 255, 255, 255, 'derpa')";
-		
-		//Check if row was inserted
-		try 
-		{
-			$con = mysqli_connect("localhost","root","","medic");
-			$result = mysqli_query($con, $query);
-			mysqli_close($con);
-		}
-		catch (mysqli_sql_exception $ex) 
-		{
-			//die("Failed to run query: " . $ex->getMessage());
-			
-			$response["success"] = 0;
-			$response["message"] = "Database Error. Please Try Again!";
-			echo json_encode($response);
-			//die(json_encode($response));
-			
-		}
-		//Check if row was inserted
-		if ($result == true) 
-		{
-			// successfully inserted into database
-			$response["success"] = 1;
-			$response["message"] = "Entry successfully created.";
-			
-			//Echoing JSON response
-			echo json_encode($response);
-		} 
-		else
-		{
-			//Failed to insert row
-			$response["success"] = 0;
-			$response["message"] = "Oops! There was an error";
-			
-			//Echoing JSON response
-			echo json_encode($response);
-		}
-	} 
-	/*else 
+		$con = mysqli_connect("localhost","root","","medic");
+		$result = mysqli_query($con, $query);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//$patient_id = $row["patient_id"];
+		mysqli_close($con);
+	}
+	catch (mysqli_sql_exception $ex) 
 	{
-		//A required field is missing
+		//die("Failed to run query: " . $ex->getMessage());
+		
 		$response["success"] = 0;
-		$response["message"] = "The required field(s) is missing";
+		$response["message"] = "Database Error. Please Try Again!";
 		
-		//Echoing JSON response
 		echo json_encode($response);
-	}*/
-?>
+		//die(json_encode($response));
+		
+	}
+	
+	
+	// check for empty result
+	if (mysqli_num_rows($result) > 0) 
+	{
+		// looping through all results
+		// patients node
+		$response["patients_statistics"] = array();
+		
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) 
+		{
+			//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			//Temp user array
+			$statistics = array();
+            $statistics["statistics_id"] = $row["statistics_id"];
+            $statistics["patient_id"] = $row["patient_id"];
+			$statistics["date_of_submission"] = $row["date_of_submission"];
+            $statistics["glucose_level"] = $row["glucose_level"];
+            $statistics["cholesterol"] = $row["cholesterol"];
+            $statistics["weight"] = $row["weight"];
+            $statistics["comments"] = $row["comments"];
+			
+			// push single patient into final response array
+			array_push($response["patients_statistics"], $statistics);
+		}
+		// success
+		$response["success"] = 1;
+		
+		// echoing JSON response
+		echo json_encode($response);
+	} 
+	else {
+		// no patient found
+		$response["success"] = 0;
+		$response["message"] = "No statistics found";
+		
+		// echo no users JSON
+		echo json_encode($response);
+	}
+?>		
